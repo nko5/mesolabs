@@ -86,7 +86,6 @@ var Game = {
   },
   
   nextLevel: function() {
-    console.log("Level " + this.level + " GOAL!!");
     this._reset();
     this.init(this.level + 1);
   },
@@ -94,7 +93,6 @@ var Game = {
   over: function() {
     window.removeEventListener("keydown", this.player);
     Game.engine.lock();
-    console.log("GAME OVER!!");
     var str = "%c{red}G A M E  O V E R !!";
     Game.display.drawText(32, 20, str);
     document.getElementById("input").focus();
