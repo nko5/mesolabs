@@ -1,32 +1,74 @@
+var request = window.superagent;
+
 var Game = {
+  level: 1,
   display: null,
   map: {},
   fovData: {},
   player: null,
   engine: null,
   
-  init: function(seed) {
+  init: function(level) {
+    var that = this;
     this.display = new ROT.Display({width: 80, height: 40});
     document.body.appendChild(this.display.getContainer());
-    if (!seed) seed = 2525;
-    ROT.RNG.setSeed(seed);
-    this._generateMap();
+    this.level = !level ? 1 : level;
+    this._showLevel();
     
-    var scheduler = new ROT.Scheduler.Simple();
-    scheduler.add(this.player, true);
-    this.engine = new ROT.Engine(scheduler);
-    this.engine.start();
+    this._getSeed(function(seed) {
+      console.log(seed);
+      ROT.RNG.setSeed(seed);
+      that._generateMap();
+
+      var scheduler = new ROT.Scheduler.Simple();
+      scheduler.add(that.player, true);
+      that.engine = new ROT.Engine(scheduler);
+      that.engine.start();
+    });
+  },
+  
+  _getSeed: function(callback) {
+    request
+     .get("/seeds/" + this.level)
+     .end(function(err, res) {
+       if (err) throw err;
+       return callback(res.body.seed);
+     });
+  },
+  
+  _showLevel: function() {
+    var str = "";
+    if (parseInt(this.level / 10) % 10 !==1) {
+      if (this.level % 10 === 1) {
+        str = this.level + "st";
+      } else if (this.level % 10 === 2) {
+        str = this.level + "nd";
+      } else if (this.level % 10 === 3) {
+        str = this.level + "rd";
+      } else {
+        str = this.level + "th";
+      }
+    } else {
+        str = this.level + "th";
+    }
+    
+    document.getElementById("level").textContent = str;
   },
   
   _reset: function() {
-    window.removeEventListener("keydown", this);
+    window.removeEventListener("keydown", this.player);
     document.body.lastChild.remove();
+    this.display = null;
+    this.map = {};
+    this.fovData = {};
+    this.player = null;
+    this.engine = null;
   },
   
-  nextFloor: function() {
-    console.log("GOAL!!");
+  nextLevel: function() {
+    console.log("Level " + this.level + " GOAL!!");
     this._reset();
-    this.init(new Date().getMilliseconds());
+    this.init(this.level + 1);
   },
   
   _generateMap: function() {
@@ -39,7 +81,7 @@ var Game = {
       if (value) {
         this.map[key] = "#"
       } else {
-        this.map[key] = " ";
+        this.map[key] = ".";
         freeCells.push(key);
       }
     }
@@ -127,16 +169,17 @@ Player.prototype.handleEvent = function(e) {
   this._x = newX;
   this._y = newY;
   this._draw();
-  
-  this.checkGoal();
-  
+
+
+  if (this.checkGoal()) {
+    return Game.nextLevel();
+  }
   window.removeEventListener("keydown", this);
   Game.engine.unlock();
+
 }
 
 Player.prototype.checkGoal = function() {
   var key = this._x + "," + this._y;
-  if (Game.map[key] ===  ">") {
-    Game.nextFloor();
-  }
+  return Game.map[key] ===  ">";
 }
