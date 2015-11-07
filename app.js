@@ -2,11 +2,15 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app)
 var io = require('socket.io')(http);
+var bodyParser = require('body-parser');
 
 //Create a static file server
 app.configure(function() {
   app.use(express.static(__dirname + '/public'));
 });
+app.use(bodyParser.json());
+
+// Initialize
 var floors = [];
 floors[0] = 0;
 floors[1] = 2525;
@@ -14,6 +18,13 @@ floors[1] = 2525;
 var players = [];
 players[0] = {};
 players[1] = {};
+
+var messages = [];
+messages[0] = {};
+messages[1] = {};
+
+var LIMIT = 90;
+var maxLevel = 1;
 
 // HTTP API
 app.get('/seeds/:level', function(req, res) {
@@ -23,11 +34,22 @@ app.get('/seeds/:level', function(req, res) {
     seed = new Date().getMilliseconds();
     floors[level] = seed;
     players[level] = {};
+    messages[level] = {};
+    maxLevel = level;
   }
-  res.send({seed: seed});
+  res.send({seed: seed, max: maxLevel, messages: messages[level]});
 });
 
-var LIMIT = 90;
+app.post('/messages/:level/:loc', function(req, res) {
+  var level = req.params.level;
+  var loc = req.params.loc;
+  var msg = messages[level][loc];
+  if (!msg) msg = [];
+  msg.push(req.body.message);
+  messages[level][loc] = msg;
+  console.log(messages);
+  res.end();
+});
 
 // WebSocket
 io.on('connect', function(socket) {
@@ -59,6 +81,14 @@ io.on('connect', function(socket) {
     players[level][socket.id] = loc;
     
     io.in(level).emit("others", {id: socket.id, loc: loc});
+  });
+  
+  socket.on('message', function(data) {
+    var msg = messages[level][data.loc];
+    if (!msg) msg = [];
+    msg.push(data.message);
+    messages[level][data.loc] = msg;
+    io.in(level).emit("message", data);
   });
   
   socket.on('disconnect', function() {

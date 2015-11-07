@@ -2,6 +2,8 @@ var request = window.superagent;
 var socket = io();
 
 var Game = {
+  width: 76,
+  height: 42,
   level: 1,
   display: null,
   map: {},
@@ -10,28 +12,33 @@ var Game = {
   player: null,
   engine: null,
   others: {},
+  messages: {},
   
   init: function(level) {
-    this.display = new ROT.Display({width: 80, height: 40});
+    this.display = new ROT.Display({width: this.width, height: this.height});
     document.getElementById("game").appendChild(this.display.getContainer());
     this.level = !level ? 1 : level;
-    this._showLevel();
     
     var that = this;
-    this._getSeed(function(seed) {
+    this._getSeed(function(seed, messages, max) {
+      that._showLevel(max);
+      that.messages = messages;
       ROT.RNG.setSeed(seed);
       that._generateMap();
+      that.player.checkMessages();
+
 
       var scheduler = new ROT.Scheduler.Simple();
       scheduler.add(that.player, true);
       that.engine = new ROT.Engine(scheduler);
       that.engine.start();
       
-      var msg = {
+      var data = {
         lvl: that.level,
         loc: {x: that.player._x, y: that.player._y}
       }
-      socket.emit("join", msg);
+      socket.emit("join", data);
+      document.getElementById("input").focus();
     });
   },
   
@@ -40,11 +47,11 @@ var Game = {
      .get("/seeds/" + this.level)
      .end(function(err, res) {
        if (err) throw err;
-       return callback(res.body.seed);
+       return callback(res.body.seed, res.body.messages, res.body.max);
      });
   },
   
-  _showLevel: function() {
+  _showLevel: function(max) {
     var str = "";
     if (parseInt(this.level / 10) % 10 !==1) {
       if (this.level % 10 === 1) {
@@ -59,7 +66,8 @@ var Game = {
     } else {
         str = this.level + "th";
     }
-    
+    str += " (of " + max + ")";
+    str = this.level + "/" + max;
     document.getElementById("level").textContent = str;
   },
   
@@ -74,6 +82,7 @@ var Game = {
     this.player = null;
     this.engine = null;
     this.others = {};
+    this.messages = {};
   },
   
   nextLevel: function() {
@@ -92,7 +101,7 @@ var Game = {
   },
   
   _generateMap: function() {
-    var digger = new ROT.Map.Digger(80, 40);
+    var digger = new ROT.Map.Digger(this.width, this.height);
     var freeCells = [];
     
     var digCallback = function(x, y, value) {
@@ -107,6 +116,7 @@ var Game = {
     }
     digger.create(digCallback.bind(this));
     
+    this._generateMessages();
     this._generateGoal(freeCells);
 //    this._drawWholeMap();
     this._createPlayer(freeCells);
@@ -115,6 +125,12 @@ var Game = {
   _generateGoal: function(freeCells) {
     var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
     this.map[freeCells[index]] = ">";
+  },
+  
+  _generateMessages: function() {
+    Object.keys(this.messages).forEach(function(key) {
+      Game.map[key] = "+"; //"\u2755";
+    });
   },
 
   _drawWholeMap: function() {
@@ -204,10 +220,11 @@ Player.prototype.handleEvent = function(e) {
   this._x = newX;
   this._y = newY;
   this._draw();
-
+  
   if (this.checkGoal()) {
     return Game.nextLevel();
   }
+  this.checkMessages();
   window.removeEventListener("keydown", this);
   Game.engine.unlock();
 
@@ -216,6 +233,21 @@ Player.prototype.handleEvent = function(e) {
 Player.prototype.checkGoal = function() {
   var key = this._x + "," + this._y;
   return Game.map[key] ===  ">";
+}
+
+Player.prototype.checkMessages = function() {
+  var key = this._x + "," + this._y;
+  var messages = Game.messages[key];
+  if (messages) {
+    var html = '<blockquote>';
+    messages.forEach(function(msg) {
+      html += '<p>' + msg + '</p>';
+    });
+    html += '</blockquote>';
+    document.getElementById("messages").innerHTML = html;
+  } else {
+    document.getElementById("messages").innerHTML = '';
+  }
 }
 
 socket.on('timer', function(msg) {
@@ -254,4 +286,26 @@ socket.on('others over', function(others) {
     Game.display.draw(others.loc.x, others.loc.y, Game.map[key]);
   }
   delete Game.others[others.id];
-})
+});
+
+function postMessage() {
+  var input = document.getElementById("input").value;
+  var data = {
+    loc: Game.player._x + "," + Game.player._y,
+    message: input
+  };
+  socket.emit("message", data);
+  document.getElementById("input").value = "";
+  return false;
+}
+
+socket.on('message', function(data) {
+  var messages = Game.messages[data.loc];
+  if (!messages) {
+    messages = [];
+    Game.map[data.loc] = "+";
+  }
+  messages.push(data.message);
+  Game.messages[data.loc] = messages;
+  Game.player.checkMessages();
+});

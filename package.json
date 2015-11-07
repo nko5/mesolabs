@@ -5,6 +5,7 @@
   "author": "Node Knockout Team <all@nodeknockout.com>",
   "main": "./app.js",
   "dependencies": {
+    "body-parser": "^1.14.1",
     "express": "3.x.x",
     "socket.io": "^1.3.7"
   },

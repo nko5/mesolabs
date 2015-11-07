@@ -2,7 +2,6 @@
 <html>
   <title>Node Knockout 2015</title>
   <head>
-    <link rel='stylesheet' type='text/css' href='styles/main.css'>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
     <script type="text/javascript" src="js/rot.min.js"></script>
     <script type="text/javascript" src="js/superagent.js"></script>
@@ -10,11 +9,32 @@
     <script type="text/javascript" src="js/game.js"></script>
   </head>
   <body onload="Game.init();">
-    <h1>Node Rogue</h1>
-    <h2>Now you are on the <span id="level"></span> basement level. Time Limit: <span id="timer"></span></h2>
-    <div id="game"></div>
-    <div class="col-sm-6 col-md-offset-3">
-      <input class="form-control" type="text" id="input" placeholder="Leave message here.">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-10">
+          <h1>Node Rogue <small>multiplay online rogue-like with messages left.</small></h1>
+        </div>
+        <div class="col-md-2 text-right">
+          <iframe src="http://nodeknockout.com/iframe/mesolabs" frameborder=0 scrolling=no allowtransparency=true width=115 height=25></iframe>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <p class="lead">Basement Level: <span id="level"></span></p>
+        </div>
+        <div class="col-md-4 col-md-offset-4">
+          <p class="lead text-right">Time Limit: <span id="timer"></span></p>
+        </div>
+      </div>
+      <div id="game"></div>
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+          <form onsubmit="return postMessage()">
+            <input class="form-control" type="text" id="input" placeholder="Leave message here.">
+          </form>
+        </div>
+      </div>
+      <div id="messages" class="bg-info"></div>
     </div>
   </body>
 </html>
