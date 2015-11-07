@@ -1,22 +1,24 @@
 var request = window.superagent;
+var socket = io();
 
 var Game = {
   level: 1,
   display: null,
   map: {},
+  drawnMap: {},
   fovData: {},
   player: null,
   engine: null,
+  others: {},
   
   init: function(level) {
-    var that = this;
     this.display = new ROT.Display({width: 80, height: 40});
-    document.body.appendChild(this.display.getContainer());
+    document.getElementById("game").appendChild(this.display.getContainer());
     this.level = !level ? 1 : level;
     this._showLevel();
     
+    var that = this;
     this._getSeed(function(seed) {
-      console.log(seed);
       ROT.RNG.setSeed(seed);
       that._generateMap();
 
@@ -24,6 +26,12 @@ var Game = {
       scheduler.add(that.player, true);
       that.engine = new ROT.Engine(scheduler);
       that.engine.start();
+      
+      var msg = {
+        lvl: that.level,
+        loc: {x: that.player._x, y: that.player._y}
+      }
+      socket.emit("join", msg);
     });
   },
   
@@ -57,18 +65,30 @@ var Game = {
   
   _reset: function() {
     window.removeEventListener("keydown", this.player);
-    document.body.lastChild.remove();
+    document.getElementById("game").lastChild.remove();
+    socket.emit("leave", this.level);
     this.display = null;
     this.map = {};
+    this.drawnMap = {};
     this.fovData = {};
     this.player = null;
     this.engine = null;
+    this.others = {};
   },
   
   nextLevel: function() {
     console.log("Level " + this.level + " GOAL!!");
     this._reset();
     this.init(this.level + 1);
+  },
+  
+  over: function() {
+    window.removeEventListener("keydown", this.player);
+    Game.engine.lock();
+    console.log("GAME OVER!!");
+    var str = "%c{red}G A M E  O V E R !!";
+    Game.display.drawText(32, 20, str);
+    document.getElementById("input").focus();
   },
   
   _generateMap: function() {
@@ -79,7 +99,7 @@ var Game = {
       var key = x + "," + y;
       this.fovData[key] = value;
       if (value) {
-        this.map[key] = "#"
+        this.map[key] = "#";
       } else {
         this.map[key] = ".";
         freeCells.push(key);
@@ -124,7 +144,17 @@ var Player = function(x, y) {
 
 Player.prototype._draw = function() {
   this._drawFov();
+  this._drawOthers();
   Game.display.draw(this._x, this._y, "@", "#ff0");
+}
+
+Player.prototype._drawOthers = function() {
+  Object.keys(Game.others).forEach(function(key) {
+    var loc = Game.others[key];
+    if (Game.drawnMap[loc.x + "," + loc.y]) {
+      Game.display.draw(loc.x, loc.y, "@", "#999");
+    }
+  });
 }
 
 Player.prototype._drawFov = function() {
@@ -142,6 +172,7 @@ Player.prototype._drawFov = function() {
     // var color = (Game.fovData[x + "," + y] ? "#aa0" : "#660");
     // Game.display.draw(x, y, ch, "#fff", color);
     Game.display.draw(x, y, Game.map[x + "," + y]);
+    Game.drawnMap[x + "," + y] = true;
   });
 }
 
@@ -164,12 +195,15 @@ Player.prototype.handleEvent = function(e) {
   var newY = this._y + diff[1];
   var newKey = newX + ","+ newY;
   if (Game.map[newKey] === "#") return;
+  socket.emit("move", {
+    oldX: this._x, oldY: this._y,
+    x: newX, y: newY
+  });
   
   Game.display.draw(this._x, this._y, Game.map[this._x + "," + this._y]);
   this._x = newX;
   this._y = newY;
   this._draw();
-
 
   if (this.checkGoal()) {
     return Game.nextLevel();
@@ -183,3 +217,41 @@ Player.prototype.checkGoal = function() {
   var key = this._x + "," + this._y;
   return Game.map[key] ===  ">";
 }
+
+socket.on('timer', function(msg) {
+  if (msg === 1) {
+    msg = "1sec.";
+  } else {
+    msg = msg + "secs.";
+  }
+  document.getElementById("timer").textContent = msg;
+});
+
+socket.on('over', function(msg) {
+  document.getElementById("timer").textContent = "0sec.";
+  Game.over();
+});
+
+socket.on('others', function(others) {
+  if (others.id === socket.id) return;
+  var old = others.loc.oldX + "," + others.loc.oldY;
+  var key = others.loc.x + "," + others.loc.y;
+  
+  if (Game.drawnMap[old] && !(Game.player._x === others.loc.oldX && Game.player._y === others.loc.oldY)) {
+    Game.display.draw(others.loc.oldX, others.loc.oldY, Game.map[old]);
+  }
+  if (Game.drawnMap[key] && !(Game.player._x === others.loc.x && Game.player._y === others.loc.y)) {
+    Game.display.draw(others.loc.x, others.loc.y, "@", "#999");
+  }
+  Game.others[others.id] = {x: others.loc.x, y: others.loc.y};
+});
+
+socket.on('others over', function(others) {
+  if (others.id === socket.id) return;
+  var key = others.loc.x + "," + others.loc.y;
+  
+  if (Game.drawnMap[key]) {
+    Game.display.draw(others.loc.x, others.loc.y, Game.map[key]);
+  }
+  delete Game.others[others.id];
+})

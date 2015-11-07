@@ -5,11 +5,16 @@
   "author": "Node Knockout Team <all@nodeknockout.com>",
   "main": "./app.js",
   "dependencies": {
-    "express": "3.x.x"
+    "express": "3.x.x",
+    "socket.io": "^1.3.7"
   },
   "scripts": {
     "start": "node app.js",
     "postinstall": "node scripts/postinstall.js"
-  }
-
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:nko5/mesolabs.git"
+  },
+  "license": "MIT"
 }

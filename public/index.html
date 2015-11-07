@@ -3,12 +3,18 @@
   <title>Node Knockout 2015</title>
   <head>
     <link rel='stylesheet' type='text/css' href='styles/main.css'>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
     <script type="text/javascript" src="js/rot.min.js"></script>
     <script type="text/javascript" src="js/superagent.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="js/game.js"></script>
   </head>
   <body onload="Game.init();">
     <h1>Node Rogue</h1>
-    <h2>Now you are on the <span id="level"></span> basement level.</h2>
+    <h2>Now you are on the <span id="level"></span> basement level. Time Limit: <span id="timer"></span></h2>
+    <div id="game"></div>
+    <div class="col-sm-6 col-md-offset-3">
+      <input class="form-control" type="text" id="input" placeholder="Leave message here.">
+    </div>
   </body>
 </html>
