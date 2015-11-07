@@ -23,14 +23,14 @@ var messages = [];
 messages[0] = {};
 messages[1] = {};
 
-var LIMIT = 90;
+var LIMIT = 60;
 var maxLevel = 1;
 
 // HTTP API
 app.get('/seeds/:level', function(req, res) {
   var level = req.params.level;
   var seed = floors[level];
-  if (!seed) {
+  if (!seed) {  
     seed = new Date().getMilliseconds();
     floors[level] = seed;
     players[level] = {};
