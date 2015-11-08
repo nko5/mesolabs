@@ -2,8 +2,8 @@ var request = window.superagent;
 var socket = io();
 
 var Game = {
-  width: 76,
-  height: 42,
+  width: 95,
+  height: 30,
   level: 1,
   display: null,
   map: {},
@@ -16,6 +16,10 @@ var Game = {
   
   init: function(level) {
     this.display = new ROT.Display({width: this.width, height: this.height});
+    this.display.setOptions({
+      fontFamily: "Cousine",
+      spacing: 1.2
+    });
     document.getElementById("game").appendChild(this.display.getContainer());
     this.level = !level ? 1 : level;
     
@@ -181,7 +185,7 @@ Player.prototype._drawFov = function() {
   }
   
   var fov = new ROT.FOV.PreciseShadowcasting(lightPasses);
-  fov.compute(this._x, this._y, 10, function(x, y, r, visibility) {
+  fov.compute(this._x, this._y, 6, function(x, y, r, visibility) {
     // var ch = (r ? "" : "@");
     // var color = (Game.fovData[x + "," + y] ? "#aa0" : "#660");
     // Game.display.draw(x, y, ch, "#fff", color);
@@ -307,3 +311,7 @@ socket.on('message', function(data) {
   Game.messages[data.loc] = messages;
   Game.player.checkMessages();
 });
+
+window.onload = function(){
+  Game.init();
+};
