@@ -1,6 +1,13 @@
 var request = window.superagent;
 var socket = io();
 
+// ブラウザ判定
+var ua = window.navigator.userAgent;
+var isMS = false;
+if(ua.match(/MSIE/) || ua.match(/Trident/) || ua.match(/Edge/)) {
+  isMS = true;
+}
+
 var Game = {
   width: 95,
   height: 30,
@@ -22,6 +29,12 @@ var Game = {
     });
     document.getElementById("game").appendChild(this.display.getContainer());
     this.level = !level ? 1 : level;
+    
+    if (isMS) {
+      var str = "%c{red}Work with latest Chrome, Firefox or Safari on PC ONLY !!";
+      Game.display.drawText(20, 15, str);
+      return;
+    }
     
     var that = this;
     this._getSeed(function(seed, messages, max) {
@@ -98,7 +111,7 @@ var Game = {
     window.removeEventListener("keydown", this.player);
     Game.engine.lock();
     var str = "%c{red}G A M E  O V E R !!";
-    Game.display.drawText(32, 20, str);
+    Game.display.drawText(38, 15, str);
     document.getElementById("input").focus();
   },
   
