@@ -31,8 +31,8 @@ var Game = {
     this.level = !level ? 1 : level;
     
     if (isMS) {
-      var str = "%c{red}Work with latest Chrome, Firefox or Safari on PC ONLY !!";
-      Game.display.drawText(20, 15, str);
+      var str = "%c{red}Work with latest Chrome, Firefox or Safari on PC/Mac ONLY !!";
+      Game.display.drawText(18, 15, str);
       return;
     }
     
