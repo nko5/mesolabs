@@ -252,16 +252,20 @@ Player.prototype.checkGoal = function() {
 
 Player.prototype.checkMessages = function() {
   var key = this._x + "," + this._y;
+  var msg = document.getElementById("messages");
+  if (msg.hasChildNodes()) {
+    msg.removeChild(msg.firstChild);
+  }
   var messages = Game.messages[key];
   if (messages) {
-    var html = '<blockquote>';
+    var bq = document.createElement("blockquote");
     messages.forEach(function(msg) {
-      html += '<p>' + msg + '</p>';
+      var p = document.createElement("p");
+      var text = document.createTextNode(msg);
+      p.appendChild(text);
+      bq.appendChild(p);
     });
-    html += '</blockquote>';
-    document.getElementById("messages").innerHTML = html;
-  } else {
-    document.getElementById("messages").innerHTML = '';
+    document.getElementById("messages").appendChild(bq);
   }
 }
 
