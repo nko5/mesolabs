@@ -110,7 +110,7 @@ function timerStart(limit, socket, level) {
   }, 1 * 1000);
   var timeout = setTimeout(function() {
     clearInterval(interval);
-    delete players[level][socket.id];
+//    delete players[level][socket.id];
     socket.emit('over');
   }, limit * 1000);
   return {

@@ -264,6 +264,7 @@ socket.on('timer', function(msg) {
 socket.on('over', function(msg) {
   document.getElementById("timer").textContent = "0sec.";
   Game.over();
+  socket.close();
 });
 
 socket.on('others', function(others) {
@@ -284,7 +285,7 @@ socket.on('others over', function(others) {
   if (others.id === socket.id) return;
   var key = others.loc.x + "," + others.loc.y;
   
-  if (Game.drawnMap[key]) {
+  if (Game.drawnMap[key] && !(Game.player._x === others.loc.x && Game.player._y === others.loc.y)) {
     Game.display.draw(others.loc.x, others.loc.y, Game.map[key]);
   }
   delete Game.others[others.id];
